@@ -3,14 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import io from 'socket.io-client';
 import { QRCodeSVG } from 'qrcode.react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Sidebar from '../../components/Sidebar';
-import GlassCard from '../../components/GlassCard';
-import { QrCode, Phone, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { MoreVertical, MessageSquare, RefreshCw, Laptop, Smartphone } from 'lucide-react';
 
 const SOCKET_SERVER = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
 
-export default function ConnectionFlow() {
+export default function WhatsAppWebLogin() {
   const router = useRouter();
   const [method, setMethod] = useState('qr');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -19,66 +16,69 @@ export default function ConnectionFlow() {
   const [qrString, setQrString] = useState('');
   const [pairingCode, setPairingCode] = useState('');
   const [connStatus, setConnStatus] = useState('disconnected');
-  const [statusMsg, setStatusMsg] = useState('Awaiting activation command...');
 
   useEffect(() => {
     const socketInstance = io(SOCKET_SERVER); setSocket(socketInstance);
     socketInstance.on('qr_code', (data) => { setQrString(data.qr); setLoading(false); });
     socketInstance.on('pairing_code', (data) => { setPairingCode(data.code); setLoading(false); });
     socketInstance.on('status_update', (data) => {
-      setConnStatus(data.status); if (data.message) setStatusMsg(data.message);
-      if (data.status === 'connected') { setTimeout(() => router.push('/dashboard'), 1500); }
+      setConnStatus(data.status);
+      if (data.status === 'connected') { setTimeout(() => router.push('/dashboard'), 1000); }
     });
     return () => socketInstance.disconnect();
   }, [router]);
 
-  const initiateConnection = (usePhone = false) => {
+  const startSyncing = (usePhone = false) => {
     if (!socket) return; setLoading(true); setQrString(''); setPairingCode('');
     socket.emit('init_session', { sessionId: "session_operator_01", usePairingCode: usePhone, phoneNumber: usePhone ? phoneNumber : null });
   };
 
   return (
-    <div className="flex bg-darkBg min-h-screen text-slate-200"><Sidebar />
-      <div className="flex-1 p-12 relative overflow-y-auto"><div className="mesh-glow top-[-50px] right-[-50px]"></div>
-        <div className="max-w-4xl mx-auto mb-10">
-          <h1 className="text-3xl font-extrabold text-white">Link Companion Device</h1>
+    <div className="min-h-screen bg-[#111b21] flex flex-col relative select-none">
+      <div className="h-[222px] bg-[#00a884] w-full absolute top-0 left-0 z-0" />
+      <div className="max-w-[1000px] mx-auto w-full pt-10 pb-6 flex items-center gap-4 z-10 text-white px-4">
+        <Smartphone size={28} />
+        <span className="font-semibold tracking-wider text-xs uppercase opacity-90">WhatsApp Web Companion Engine</span>
+      </div>
+      <div className="max-w-[1000px] mx-auto w-full flex-1 bg-[#222e35] shadow-2xl rounded-[3px] z-10 mb-12 flex flex-col md:flex-row p-12 overflow-y-auto border border-white/5">
+        <div className="flex-1 pr-6 text-slate-300">
+          <h1 className="text-2xl font-light text-[#e9edef] mb-8">To use WhatsApp Companion on your computer</h1>
+          <ol className="space-y-5 text-[15px] text-[#8696a0] list-decimal list-inside pl-1 leading-relaxed">
+            <li>Open WhatsApp on your phone</li>
+            <li>Tap <span className="text-[#e9edef] font-medium">Menu</span> or <span className="text-[#e9edef] font-medium">Settings</span> and select <span className="text-[#e9edef] font-medium">Linked Devices</span></li>
+            <li>Tap on <span className="text-[#e9edef] font-medium">Link a Device</span></li>
+            <li>Point your phone to this screen to capture the authentication matrix</li>
+          </ol>
+          <div className="mt-10 border-t border-[#2a3942] pt-6">
+            <button onClick={() => { setMethod(method === 'qr' ? 'phone' : 'qr'); setPairingCode(''); }} className="text-[#00a884] text-sm font-medium hover:underline">
+              {method === 'qr' ? "Link with phone number instead" : "Link with QR code instead"}
+            </button>
+          </div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="space-y-4">
-            <div className="glass-panel p-4 rounded-xl flex flex-col gap-2">
-              <button onClick={() => setMethod('qr')} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm ${method === 'qr' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'text-slate-400'}`}><QrCode size={18} /> QR Code Matrix</button>
-              <button onClick={() => setMethod('phone')} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm ${method === 'phone' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'text-slate-400'}`}><Phone size={18} /> Phone Pairing Code</button>
+        <div className="w-full md:w-[320px] flex flex-col items-center justify-center mt-8 md:mt-0 md:border-l border-[#2a3942] md:pl-6">
+          {method === 'qr' ? (
+            <div className="bg-white p-3 rounded-[4px] relative shadow-md">
+              {qrString ? <QRCodeSVG value={qrString} size={240} level="H" /> : (
+                <div className="w-[240px] h-[240px] bg-[#111b21] flex flex-col items-center justify-center gap-3">
+                  <RefreshCw size={24} className="animate-spin text-[#00a884]" />
+                  <span className="text-xs text-[#8696a0]">Awaiting stream...</span>
+                </div>
+              )}
+              {connStatus === 'connected' && <div className="absolute inset-0 bg-[#111b21]/95 flex items-center justify-center text-[#00a884] font-bold text-sm">Authenticated</div>}
             </div>
-            <div className="glass-panel p-4 rounded-xl text-xs space-y-1">
-              <span className="text-slate-400 block font-bold">NODE BRIDGE STATUS:</span>
-              <span className="text-white font-mono block uppercase">{connStatus}</span>
-              <p className="text-slate-400 mt-2 bg-slate-950 p-2 rounded border border-glassBorder">{statusMsg}</p>
+          ) : (
+            <div className="w-full text-center px-4">
+              <input type="text" placeholder="Enter Phone Number (+1...)" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} disabled={loading || pairingCode} className="w-full px-4 py-2.5 bg-[#111b21] rounded-[6px] border border-[#2a3942] text-[#e9edef] text-center font-mono focus:outline-none focus:border-[#00a884] text-sm mb-4" />
+              {pairingCode ? (
+                <div className="p-4 bg-[#111b21] border border-[#2a3942] rounded-[4px] font-mono text-2xl font-bold tracking-widest text-[#00a884] uppercase">{pairingCode}</div>
+              ) : (
+                <button onClick={() => startSyncing(true)} disabled={!phoneNumber || loading} className="w-full py-2.5 bg-[#00a884] hover:bg-[#008f72] text-[#111b21] rounded-[4px] font-semibold text-sm transition-colors">Generate Pairing Code</button>
+              )}
             </div>
-          </div>
-          <div className="lg:col-span-2">
-            <GlassCard className="flex flex-col items-center justify-center min-h-[400px]">
-              <AnimatePresence mode="wait">
-                {method === 'qr' ? (
-                  <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center">
-                    <div className="bg-white p-4 rounded-2xl relative mb-4 border border-white/20">
-                      {qrString ? <QRCodeSVG value={qrString} size={200} /> : <RefreshCw size={24} className="animate-spin text-cyan-600 m-20" />}
-                      {connStatus === 'connected' && <div className="absolute inset-0 bg-slate-950/90 rounded-2xl flex items-center justify-center text-emerald-400 font-bold">Authorized</div>}
-                    </div>
-                    {!qrString && !loading && <button onClick={() => initiateConnection(false)} className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-indigo-600 rounded-xl text-xs font-bold text-white shadow-neonGlow">Request Sync Stream</button>}
-                  </motion.div>
-                ) : (
-                  <motion.div key="phone" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full max-w-sm flex flex-col items-center">
-                    <input type="text" placeholder="+1 555 0199" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} disabled={loading || pairingCode} className="w-full px-4 py-3 bg-slate-900 rounded-xl border border-glassBorder text-white text-center font-mono mb-4 focus:outline-none focus:border-cyan-500" />
-                    {pairingCode ? (
-                      <div className="p-4 bg-cyan-950/30 border border-cyan-500/30 rounded-xl font-mono text-3xl font-extrabold tracking-widest text-cyan-400 w-full text-center">{pairingCode}</div>
-                    ) : (
-                      <button onClick={() => initiateConnection(true)} disabled={!phoneNumber || loading} className="w-full py-3 bg-gradient-to-r from-cyan-500 to-indigo-600 rounded-xl text-xs font-bold text-white shadow-neonGlow">Fetch Code String</button>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </GlassCard>
-          </div>
+          )}
+          {!qrString && !loading && method === 'qr' && (
+            <button onClick={() => startSyncing(false)} className="mt-4 text-xs font-semibold uppercase text-[#00a884] tracking-wider hover:opacity-80">Click to fetch code canvas</button>
+          )}
         </div>
       </div>
     </div>
