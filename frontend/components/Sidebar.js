@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Link2, Settings, MessageSquare, LogOut } from 'lucide-react';

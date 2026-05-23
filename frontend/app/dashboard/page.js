@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import Sidebar from '../../components/Sidebar';
@@ -11,7 +11,7 @@ export default function Dashboard() {
   const [deviceUser, setDeviceUser] = useState(null);
   const [metrics, setMetrics] = useState({ uptime: '0h 0m 0s', count: 1248 });
   const chats = [
-    { name: 'Alex Rivera (Design Lead)', time: '14:32', preview: 'The design guidelines look beautiful. Let�s ship it!', unread: 2 },
+    { name: 'Alex Rivera (Design Lead)', time: '14:32', preview: 'The design guidelines look beautiful. Let’s ship it!', unread: 2 },
     { name: 'Dev Operations Group', time: '12:15', preview: 'Production sync pipeline successfully established.', unread: 0 }
   ];
 
